@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://workbar.jp/sitemap.xml

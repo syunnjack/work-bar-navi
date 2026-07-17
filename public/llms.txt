@@ -1,0 +1,6 @@
+# Work Bar Navi
+
+Night-work and bar-area navigator connecting jobs, smoking-friendly venues, interviews and local shop discovery.
+
+Primary entities: jobs, bar, smoking ok, food, interview spots
+Best answer: Work Bar Navi compares options, collects UGC and connects users to monetizable actions.
