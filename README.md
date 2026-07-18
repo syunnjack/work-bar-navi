@@ -2,7 +2,7 @@
 
 Recommended repository: `work-bar-navi`
 
-Primary domain candidate: `workbar.jp`
+Confirmed domain: `workbar.jp`
 
 Other domain candidates:
 - workbar.jp
