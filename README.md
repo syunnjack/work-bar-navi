@@ -2,10 +2,10 @@
 
 Recommended repository: `work-bar-navi`
 
-Confirmed domain: `workbar.jp`
+Confirmed domain: `https://syunnjack.github.io/work-bar-navi/`
 
 Other domain candidates:
-- workbar.jp
+- https://syunnjack.github.io/work-bar-navi/
 - jobbar.jp
 - yorunavi.jp
 - barwork.jp
