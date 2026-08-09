@@ -19,6 +19,11 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Fetch venue data (HotPepper API)
+        env:
+          HOTPEPPER_API_KEY: ${{ secrets.HOTPEPPER_API_KEY }}
+        run: node scripts/fetch-venues.mjs
+
       - name: Build
         run: npm run build
 
