@@ -26,20 +26,6 @@ function tabelogSearchUrl(name, station) {
   return valueCommerceUrl(VC_PID_TABELOG, target)
 }
 
-const revenuePlans = [
-  "ホテル予約送客（楽天トラベル）",
-  "店舗広告掲載",
-  "来店予約送客",
-  "クーポン施策",
-  "認証済み店舗プラン"
-]
-const buzzIdeas = [
-  "来店前後レポートのUGCキャンペーン",
-  "エリア別・種別別ランキングページ",
-  "店舗オーナー認証バッジ制度",
-  "Xでシェアしやすい比較カード",
-  "月額スポンサー枠のランディングページ"
-]
 const faq = [
   ['掲載している店舗は本当に実在しますか？', 'はい。リクルートのホットペッパーグルメAPIから取得した実店舗データで、各店舗の禁煙・喫煙ポリシー（non_smoking情報）も公式データをそのまま表示しています。喫煙ポリシーは変更されることがあるため、来店前に「詳細を見る」リンクから最新情報をご確認ください。'],
   ['なぜ喫煙可能な店を紹介しているのですか？', '2020年の改正健康増進法により、多くの飲食店が原則屋内禁煙となりました。喫煙可能な店を探すのが難しくなったユーザー向けに、実際に喫煙できる店舗をまとめています。'],
@@ -95,8 +81,8 @@ function App() {
         </div>
         <aside className="answer-box">
           <small>AIによる要約</small>
-          <strong>喫煙OKバーナビは、探す・確かめる・向かうを最短でつなげます。</strong>
-          <p>実店舗データ、UGCによる最新情報、来店につながる導線をあわせて提供します。</p>
+          <strong>駅名や店名で検索すれば、実際に行ける喫煙可能な店がすぐに見つかります。</strong>
+          <p>ホットペッパーグルメの実店舗データをもとに、禁煙・喫煙のポリシーもあわせて確認できます。</p>
         </aside>
       </section>
 
@@ -182,7 +168,7 @@ function App() {
 
       <section className="ugc-section">
         <h2>投稿・情報提供</h2>
-        <p>来店レポート、営業時間や喫煙ルールの変更報告、写真、価格情報などを集めて、鮮度と検索ページを増やします。</p>
+        <p>実際に行ってみた感想や、営業時間・喫煙ルールが変わっていた場合の報告をお寄せください。最新の状態を保つために活用します。</p>
         <form className="ugc-form" onSubmit={submitPost}>
           <input value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} placeholder="投稿タイトル" />
           <select value={form.category} onChange={(event) => setForm({ ...form, category: event.target.value })}>
@@ -197,19 +183,8 @@ function App() {
         </div>
       </section>
 
-      <section className="growth-grid">
-        <div className="revenue-panel">
-          <h2>収益ルート</h2>
-          {revenuePlans.map((plan) => <article key={plan}><b>{plan}</b><p>高関心ページ、認証済みプロフィール、通知、比較CTAへつなげます。</p></article>)}
-        </div>
-        <div className="buzz-panel">
-          <h2>拡散施策</h2>
-          <ul>{buzzIdeas.map((idea) => <li key={idea}>{idea}</li>)}</ul>
-        </div>
-      </section>
-
       <section className="seo-section">
-        <h2>FAQ（SEO / AIO / LLMO）</h2>
+        <h2>よくある質問</h2>
         <div className="faq-grid">
           {faq.map(([question, answer]) => <article key={question}><h3>{question}</h3><p>{answer}</p></article>)}
         </div>
