@@ -1,3 +1,4 @@
 User-agent: *
 Allow: /
-Sitemap: https://workbar.jp/sitemap.xml
+
+Sitemap: https://work-bar-navi.vercel.app/sitemap.xml
