@@ -14,14 +14,19 @@ import { resolve } from 'node:path'
 // 店名に地名が入っているだけの他都市の店が混ざる（例: 京都市の検索結果に
 // 東京の店が入る）ため。中エリアコードは middle_area API から取得する。
 
-const key = process.env.HP_API_KEY
-if (!key) {
-  console.error('HP_API_KEY が設定されていません。環境変数で渡してください。')
-  process.exit(1)
-}
+// CI では HOTPEPPER_API_KEY（リポジトリのシークレット）を渡している。
+// 手元で実行するときは HP_API_KEY でもよい。
+const key = process.env.HOTPEPPER_API_KEY || process.env.HP_API_KEY
 
 const perCity = Number(process.argv[2] || 60)
 const outFile = resolve(process.cwd(), 'src', 'data', 'venues.json')
+
+if (!key) {
+  // キーが無いときに空データを書き出すと、掲載店舗が全部消えたまま公開されてしまう。
+  // すでにあるデータを残したまま、何もせず終える。
+  console.warn('APIキー（HOTPEPPER_API_KEY）が設定されていないため、店舗データの取得を飛ばします。既存の src/data/venues.json をそのまま使います。')
+  process.exit(0)
+}
 
 // 都市ごとの中エリア名。ホットペッパーの区分に合わせている。
 const cityAreas = {
