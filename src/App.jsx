@@ -86,6 +86,11 @@ function App() {
         </aside>
       </section>
 
+      {/* 景品表示法の規定（2023年10月開始のいわゆるステマ規制）により、
+          広告であることが一般消費者に分かる表示が必要。アフィリエイトリンクを
+          含むページなので、目に入る位置に明示する。 */}
+      <p className="ad-disclosure">このページには広告（アフィリエイトリンク）が含まれます。リンク先での申し込みにより、当サイトが紹介料を受け取ることがあります。</p>
+
       <section className="lastTrain-cta" aria-label="終電を逃した方へ">
         <div>
           <h2>終電を逃した方へ</h2>
@@ -113,10 +118,11 @@ function App() {
             今すぐホテルを探す
           </a>
         </form>
-        <p className="lastTrain-note">提供: 楽天トラベル</p>
+        <p className="lastTrain-note"><span className="ad-label">広告</span> 提供: 楽天トラベル</p>
       </section>
 
-      <section className="ikyu-banner" aria-label="記念日のご予約">
+      <section className="ikyu-banner" aria-label="広告: 記念日のご予約">
+        <span className="ad-label">広告</span>
         <a href="https://ck.jp.ap.valuecommerce.com/servlet/referral?sid=3771711&pid=892675884" rel="nofollow noopener noreferrer" target="_blank">
           <img src="https://ad.jp.ap.valuecommerce.com/servlet/gifbanner?sid=3771711&pid=892675884" height="1" width="1" border="0" alt="" />
           大切な記念日のご予約は、一休.comレストランで・・・。
@@ -156,6 +162,7 @@ function App() {
             </div>
             {item.sourceUrl && (
               <p className="source-note">
+                <span className="ad-label">広告</span>{' '}
                 <a href={valueCommerceUrl(VC_PID_HOTPEPPER, item.sourceUrl)} target="_blank" rel="nofollow noopener noreferrer">詳細を見る（ホットペッパーグルメ）</a>
                 {' '}/{' '}
                 <a href={tabelogSearchUrl(item.name, item.station)} target="_blank" rel="nofollow noopener noreferrer">食べログで予約を探す</a>
