@@ -176,12 +176,128 @@ ${items.map(renderVenue).join('\n')}
         <p>「禁煙席なし」は店内で喫煙できるお店、「一部禁煙」は喫煙できる席とできない席が分かれているお店です。加熱式たばこのみ可としている店もあるため、紙巻きたばこを吸う場合は店舗ごとの記載をご確認ください。</p>
       </section>
 
+${neighborhoodPages.filter((page) => page.city === city).length > 0 ? `      <section class="section-box">
+        <h2>${escapeHtml(city)}のエリアから探す</h2>
+        <ul class="city-links">
+${neighborhoodPages.filter((page) => page.city === city).map((page) => `          <li><a href="/area/${slug}/${encodeURIComponent(page.slug)}/">${escapeHtml(shortName(page.hood))}（${page.items.length}店）</a></li>`).join('\n')}
+        </ul>
+      </section>` : ''}
+
       <section class="section-box">
         <h2>ほかの都市で探す</h2>
         <ul class="city-links">
 ${otherCities.map((item) => `          <li><a href="/area/${citySlugs[item]}/">${escapeHtml(item)}</a></li>`).join('\n')}
         </ul>
       </section>
+    </main>
+  </body>
+</html>
+`
+}
+
+// 繁華街（ホットペッパーのエリア区分）ごとのページ。
+// 「すすきの 喫煙可」のように、都市より細かい言葉で探す人に応える。
+// ただし次の場合は作らない。都市ページと中身がほぼ同じになり、
+// 似たページを増やすだけになるため。
+//   - 掲載店舗が3店未満
+//   - エリア名が都市名と実質同じ（例: 仙台市 / 仙台市）
+//   - その都市にエリアが1つしかない
+const normalize = (value) => String(value).replace(/[市区（）()・･　 ]/g, '')
+
+// URL に使う短い名前。「錦糸町・浅草橋・両国・亀戸」なら「錦糸町」を使う
+const shortName = (neighborhood) => neighborhood.split(/[・･（(　 ]/)[0]
+
+const neighborhoodPages = []
+for (const city of cities) {
+  const cityItems = venues.filter((item) => item.area === city)
+  const hoods = [...new Set(cityItems.map((item) => item.neighborhood).filter(Boolean))]
+  const used = new Set()
+  for (const hood of hoods) {
+    const hoodItems = cityItems.filter((item) => item.neighborhood === hood)
+    const sameAsCity = normalize(hood) === normalize(city)
+    if (hoodItems.length < 3 || sameAsCity || hoods.length === 1) continue
+    let slug = shortName(hood)
+    if (used.has(slug)) slug = hood
+    used.add(slug)
+    neighborhoodPages.push({ city, hood, slug, items: hoodItems })
+  }
+}
+
+function neighborhoodPage(page) {
+  const { city, hood, slug, items } = page
+  const citySlug = citySlugs[city]
+  const url = `${origin}/area/${citySlug}/${encodeURIComponent(slug)}/`
+  const stations = [...new Set(items.map((item) => item.station).filter(Boolean))]
+  const smokeFree = items.filter((item) => item.smokingPolicy === '禁煙席なし').length
+  const shortLabel = shortName(hood)
+  const title = `${shortLabel}（${city}）の喫煙可能な居酒屋・バー${items.length}店｜喫煙OKバーナビ`
+  const description = `${city}の${hood}で喫煙できる居酒屋・バーを${items.length}店掲載。${stations.slice(0, 4).join('・')}の周辺で、喫煙ポリシー、営業時間、予算を確認できます。`
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: title,
+    url,
+    description,
+    about: { '@type': 'Thing', name: `${shortLabel}の喫煙可能な飲食店` },
+  }
+  const breadcrumb = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: '喫煙OKバーナビ', item: `${origin}/` },
+      { '@type': 'ListItem', position: 2, name: '都市から探す', item: `${origin}/area/` },
+      { '@type': 'ListItem', position: 3, name: city, item: `${origin}/area/${citySlug}/` },
+      { '@type': 'ListItem', position: 4, name: shortLabel, item: url },
+    ],
+  }
+
+  const sameCityPages = neighborhoodPages.filter((item) => item.city === city && item.slug !== slug)
+
+  return `<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>${escapeHtml(title)}</title>
+    <meta name="description" content="${escapeHtml(description)}" />
+    <link rel="canonical" href="${url}" />
+    <meta property="og:title" content="${escapeHtml(title)}" />
+    <meta property="og:description" content="${escapeHtml(description)}" />
+    <meta property="og:url" content="${url}" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="喫煙OKバーナビ" />
+    <meta property="og:locale" content="ja_JP" />
+    <script type="application/ld+json">${JSON.stringify(jsonLd)}</script>
+    <script type="application/ld+json">${JSON.stringify(breadcrumb)}</script>
+    <style>${styles}</style>
+  </head>
+  <body>
+    <main>
+      <section class="hero">
+        <p class="eyebrow">${escapeHtml(city)} / ${escapeHtml(hood)}</p>
+        <h1>${escapeHtml(shortLabel)}の喫煙できる居酒屋・バー</h1>
+        <p class="lead">${escapeHtml(city)}の${escapeHtml(hood)}エリアで喫煙できるお店を${items.length}店まとめています。${smokeFree > 0 ? `このうち${smokeFree}店は「禁煙席なし」で、店内で喫煙できます。` : ''}最寄りは${escapeHtml(stations.slice(0, 5).join('、'))}です。</p>
+        <a class="back" href="/area/${citySlug}/">${escapeHtml(city)}のお店をまとめて見る</a>
+      </section>
+
+      ${adDisclosure}
+
+      <section class="venue-grid">
+${items.map(renderVenue).join('\n')}
+      </section>
+
+      <section class="section-box">
+        <h2>来店前に確認したいこと</h2>
+        <p>喫煙のルールは変わることがあります。掲載しているのは各店舗が公開している情報で、「禁煙席なし」は店内で喫煙できるお店、「一部禁煙」は席によって分かれているお店です。加熱式たばこのみ可としている店もあるため、リンク先で最新の表示をご確認ください。</p>
+      </section>
+
+${sameCityPages.length > 0 ? `      <section class="section-box">
+        <h2>${escapeHtml(city)}のほかのエリア</h2>
+        <ul class="city-links">
+${sameCityPages.map((item) => `          <li><a href="/area/${citySlugs[item.city]}/${encodeURIComponent(item.slug)}/">${escapeHtml(shortName(item.hood))}</a></li>`).join('\n')}
+        </ul>
+      </section>` : ''}
     </main>
   </body>
 </html>
@@ -248,13 +364,20 @@ for (const city of cities) {
   writeFileSync(resolve(dir, 'index.html'), cityPage(city))
 }
 
+for (const page of neighborhoodPages) {
+  const dir = resolve(areasDir, citySlugs[page.city], page.slug)
+  mkdirSync(dir, { recursive: true })
+  writeFileSync(resolve(dir, 'index.html'), neighborhoodPage(page))
+}
+
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>${origin}/</loc><priority>1.0</priority></url>
   <url><loc>${origin}/area/</loc><priority>0.9</priority></url>
 ${cities.map((city) => `  <url><loc>${origin}/area/${citySlugs[city]}/</loc><priority>0.8</priority></url>`).join('\n')}
+${neighborhoodPages.map((page) => `  <url><loc>${origin}/area/${citySlugs[page.city]}/${encodeURIComponent(page.slug)}/</loc><priority>0.7</priority></url>`).join('\n')}
 </urlset>
 `
 writeFileSync(sitemapFile, sitemap)
 
-console.log(`Generated ${cities.length} city pages (${venues.length} venues) and updated sitemap.`)
+console.log(`Generated ${cities.length} city pages and ${neighborhoodPages.length} neighborhood pages (${venues.length} venues), and updated sitemap.`)
