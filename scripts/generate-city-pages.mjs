@@ -183,6 +183,13 @@ ${neighborhoodPages.filter((page) => page.city === city).map((page) => `        
         </ul>
       </section>` : ''}
 
+${stationPages.filter((page) => page.city === city).length > 0 ? `      <section class="section-box">
+        <h2>${escapeHtml(city)}の駅から探す</h2>
+        <ul class="city-links">
+${stationPages.filter((page) => page.city === city).map((page) => `          <li><a href="/area/${slug}/station/${encodeURIComponent(page.station)}/">${escapeHtml(page.station)}駅（${page.items.length}店）</a></li>`).join('\n')}
+        </ul>
+      </section>` : ''}
+
       <section class="section-box">
         <h2>ほかの都市で探す</h2>
         <ul class="city-links">
@@ -306,6 +313,110 @@ ${sameCityPages.map((item) => `          <li><a href="/area/${citySlugs[item.cit
 `
 }
 
+// 駅ごとのページ。「三宮 喫煙可 居酒屋」のように駅名で探す人に応える。
+// エリアページと同じく、似たページを増やさないための条件をつける。
+//   - 掲載店舗が5店未満
+//   - その都市の店舗の8割以上を占める（都市ページと同じ内容になる）
+//   - 同じ都市のエリアページと掲載店舗が8割以上重なる
+const stationPages = []
+for (const city of cities) {
+  const cityItems = venues.filter((item) => item.area === city)
+  const stations = [...new Set(cityItems.map((item) => item.station).filter(Boolean))]
+  for (const station of stations) {
+    const stationItems = cityItems.filter((item) => item.station === station)
+    if (stationItems.length < 5) continue
+    if (stationItems.length / cityItems.length >= 0.8) continue
+    const ids = new Set(stationItems.map((item) => item.id))
+    const overlaps = neighborhoodPages.some((page) => {
+      if (page.city !== city) return false
+      const shared = page.items.filter((item) => ids.has(item.id)).length
+      return shared / ids.size >= 0.8
+    })
+    if (overlaps) continue
+    stationPages.push({ city, station, items: stationItems })
+  }
+}
+
+function stationPage(page) {
+  const { city, station, items } = page
+  const citySlug = citySlugs[city]
+  const url = `${origin}/area/${citySlug}/station/${encodeURIComponent(station)}/`
+  const hoods = [...new Set(items.map((item) => item.neighborhood).filter(Boolean))]
+  const smokeFree = items.filter((item) => item.smokingPolicy === '禁煙席なし').length
+  const title = `${station}駅周辺の喫煙可能な居酒屋・バー${items.length}店｜喫煙OKバーナビ`
+  const description = `${city}の${station}駅周辺で喫煙できる居酒屋・バーを${items.length}店掲載。営業時間、予算、喫煙ポリシーを確認できます。`
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: title,
+    url,
+    description,
+    about: { '@type': 'Thing', name: `${station}駅周辺の喫煙可能な飲食店` },
+  }
+  const breadcrumb = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: '喫煙OKバーナビ', item: `${origin}/` },
+      { '@type': 'ListItem', position: 2, name: '都市から探す', item: `${origin}/area/` },
+      { '@type': 'ListItem', position: 3, name: city, item: `${origin}/area/${citySlug}/` },
+      { '@type': 'ListItem', position: 4, name: `${station}駅`, item: url },
+    ],
+  }
+
+  const otherStations = stationPages.filter((item) => item.city === city && item.station !== station)
+
+  return `<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>${escapeHtml(title)}</title>
+    <meta name="description" content="${escapeHtml(description)}" />
+    <link rel="canonical" href="${url}" />
+    <meta property="og:title" content="${escapeHtml(title)}" />
+    <meta property="og:description" content="${escapeHtml(description)}" />
+    <meta property="og:url" content="${url}" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="喫煙OKバーナビ" />
+    <meta property="og:locale" content="ja_JP" />
+    <script type="application/ld+json">${JSON.stringify(jsonLd)}</script>
+    <script type="application/ld+json">${JSON.stringify(breadcrumb)}</script>
+    <style>${styles}</style>
+  </head>
+  <body>
+    <main>
+      <section class="hero">
+        <p class="eyebrow">${escapeHtml(city)}</p>
+        <h1>${escapeHtml(station)}駅周辺の喫煙できる居酒屋・バー</h1>
+        <p class="lead">${escapeHtml(station)}駅の周辺で喫煙できるお店を${items.length}店まとめています。${smokeFree > 0 ? `このうち${smokeFree}店は「禁煙席なし」で、店内で喫煙できます。` : ''}${hoods.length > 0 ? `${escapeHtml(hoods.join('、'))}のエリアにあります。` : ''}</p>
+        <a class="back" href="/area/${citySlug}/">${escapeHtml(city)}のお店をまとめて見る</a>
+      </section>
+
+      ${adDisclosure}
+
+      <section class="venue-grid">
+${items.map(renderVenue).join('\n')}
+      </section>
+
+      <section class="section-box">
+        <h2>来店前に確認したいこと</h2>
+        <p>喫煙のルールは変わることがあります。掲載しているのは各店舗が公開している情報で、「禁煙席なし」は店内で喫煙できるお店、「一部禁煙」は席によって分かれているお店です。加熱式たばこのみ可としている店もあるため、リンク先で最新の表示をご確認ください。</p>
+      </section>
+
+${otherStations.length > 0 ? `      <section class="section-box">
+        <h2>${escapeHtml(city)}のほかの駅</h2>
+        <ul class="city-links">
+${otherStations.map((item) => `          <li><a href="/area/${citySlug}/station/${encodeURIComponent(item.station)}/">${escapeHtml(item.station)}駅</a></li>`).join('\n')}
+        </ul>
+      </section>` : ''}
+    </main>
+  </body>
+</html>
+`
+}
+
 function indexPage() {
   const url = `${origin}/area/`
   const title = '都市から喫煙できる居酒屋・バーを探す｜喫煙OKバーナビ'
@@ -372,14 +483,22 @@ for (const page of neighborhoodPages) {
   writeFileSync(resolve(dir, 'index.html'), neighborhoodPage(page))
 }
 
+// 駅ページはエリア名と混ざらないよう station/ の下に置く
+for (const page of stationPages) {
+  const dir = resolve(areasDir, citySlugs[page.city], 'station', page.station)
+  mkdirSync(dir, { recursive: true })
+  writeFileSync(resolve(dir, 'index.html'), stationPage(page))
+}
+
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>${origin}/</loc><priority>1.0</priority></url>
   <url><loc>${origin}/area/</loc><priority>0.9</priority></url>
 ${cities.map((city) => `  <url><loc>${origin}/area/${citySlugs[city]}/</loc><priority>0.8</priority></url>`).join('\n')}
 ${neighborhoodPages.map((page) => `  <url><loc>${origin}/area/${citySlugs[page.city]}/${encodeURIComponent(page.slug)}/</loc><priority>0.7</priority></url>`).join('\n')}
+${stationPages.map((page) => `  <url><loc>${origin}/area/${citySlugs[page.city]}/station/${encodeURIComponent(page.station)}/</loc><priority>0.7</priority></url>`).join('\n')}
 </urlset>
 `
 writeFileSync(sitemapFile, sitemap)
 
-console.log(`Generated ${cities.length} city pages and ${neighborhoodPages.length} neighborhood pages (${venues.length} venues), and updated sitemap.`)
+console.log(`Generated ${cities.length} city pages, ${neighborhoodPages.length} neighborhood pages and ${stationPages.length} station pages (${venues.length} venues), and updated sitemap.`)
