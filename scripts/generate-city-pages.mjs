@@ -202,6 +202,7 @@ ${otherCities.map((item) => `          <li><a href="/area/${citySlugs[item]}/">$
 //   - 掲載店舗が3店未満
 //   - エリア名が都市名と実質同じ（例: 仙台市 / 仙台市）
 //   - その都市にエリアが1つしかない
+//   - その都市の店舗の8割以上を占める（名前が違っても中身が都市ページと同じになる）
 const normalize = (value) => String(value).replace(/[市区（）()・･　 ]/g, '')
 
 // URL に使う短い名前。「錦糸町・浅草橋・両国・亀戸」なら「錦糸町」を使う
@@ -215,7 +216,8 @@ for (const city of cities) {
   for (const hood of hoods) {
     const hoodItems = cityItems.filter((item) => item.neighborhood === hood)
     const sameAsCity = normalize(hood) === normalize(city)
-    if (hoodItems.length < 3 || sameAsCity || hoods.length === 1) continue
+    const coversCity = hoodItems.length / cityItems.length >= 0.8
+    if (hoodItems.length < 3 || sameAsCity || coversCity || hoods.length === 1) continue
     let slug = shortName(hood)
     if (used.has(slug)) slug = hood
     used.add(slug)
