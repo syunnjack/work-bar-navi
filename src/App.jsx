@@ -2,6 +2,17 @@ import { useMemo, useState } from 'react'
 import './App.css'
 import venues from './data/venues.json'
 
+// 都市別の静的ページ（public/area/<slug>/）への導線。
+// scripts/generate-city-pages.mjs の citySlugs と同じ対応にしておくこと。
+const citySlugs = {
+  '東京': 'tokyo', '札幌市': 'sapporo', '仙台市': 'sendai', 'さいたま市': 'saitama',
+  '千葉市': 'chiba', '横浜市': 'yokohama', '川崎市': 'kawasaki', '相模原市': 'sagamihara',
+  '新潟市': 'niigata', '静岡市': 'shizuoka', '浜松市': 'hamamatsu', '名古屋市': 'nagoya',
+  '京都市': 'kyoto', '大阪市': 'osaka', '堺市': 'sakai', '神戸市': 'kobe',
+  '岡山市': 'okayama', '広島市': 'hiroshima', '北九州市': 'kitakyushu', '福岡市': 'fukuoka',
+  '熊本市': 'kumamoto',
+}
+
 const postKey = 'work-bar-navi.posts'
 const savedKey = 'work-bar-navi.saved'
 
@@ -137,6 +148,15 @@ function App() {
         <select value={category} onChange={(event) => setCategory(event.target.value)}>
           {categories.map((item) => <option key={item}>{item}</option>)}
         </select>
+      </section>
+
+      <section className="city-nav" aria-label="都市から探す">
+        <h2>都市から探す</h2>
+        <ul>
+          {Object.entries(citySlugs).map(([city, slug]) => (
+            <li key={slug}><a href={`/area/${slug}/`}>{city}</a></li>
+          ))}
+        </ul>
       </section>
 
       <section className="summary-grid">
